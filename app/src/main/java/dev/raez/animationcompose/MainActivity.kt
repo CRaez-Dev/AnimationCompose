@@ -3,6 +3,15 @@ package dev.raez.animationcompose
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -63,10 +72,7 @@ fun Login() {
                 onValueChange = { user = it },
                 isError = isError,
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                )
+                //keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email,imeAction = ImeAction.Next)
             )
             TextField(
                 value = password,
@@ -74,26 +80,58 @@ fun Login() {
                 isError = isError,
                 singleLine = true,
                 visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                // keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
-                    IconToggleButton(checked = passVisible, onCheckedChange = {passVisible = it}) {
+                    IconToggleButton(
+                        checked = passVisible,
+                        onCheckedChange = { passVisible = it }) {
                         Icon(
-                            imageVector = if(!passVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = "Visibility")
+                            imageVector = if (!passVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = "Visibility"
+                        )
                     }
-
                 }
-                
+
             )
 
-            if (validationMessage.isNotEmpty() || validationMessage.contains("Success")) {
+            AnimatedVisibility(
+                visible = validationMessage.isNotEmpty(),
+                enter = slideInHorizontally(animationSpec = tween(durationMillis = 200)) { fullWidth ->
+                    // Offsets the content by 1/3 of its width to the left, and slide towards right
+                    // Overwrites the default animation with tween for this slide animation.
+                    -fullWidth / 3
+                } + fadeIn(
+                    // Overwrites the default animation with tween
+                    animationSpec = tween(durationMillis = 200)
+                ),
+                exit = slideOutHorizontally(animationSpec = spring(stiffness = Spring.StiffnessHigh)) {
+                    // Overwrites the ending position of the slide-out to 200 (pixels) to the right
+                    200
+                } + fadeOut()
+            ) {
                 Text(text = validationMessage, color = MaterialTheme.colorScheme.error)
             }
-            Button(
-                onClick = login,
-                enabled = isLoginEnable
+
+            AnimatedVisibility(
+                visible = isLoginEnable,
+                enter = slideInHorizontally(animationSpec = tween(durationMillis = 1000)) { fullWidth ->
+                    // Offsets the content by 1/3 of its width to the left, and slide towards right
+                    // Overwrites the default animation with tween for this slide animation.
+                    -fullWidth / 3
+                } + fadeIn(
+                    // Overwrites the default animation with tween
+                    animationSpec = tween(durationMillis = 200)
+                ),
+                exit = slideOutHorizontally(animationSpec = tween(durationMillis = 1000)) {
+                    // Overwrites the ending position of the slide-out to 200 (pixels) to the right
+                    -it * 3
+                } + fadeOut()
             ) {
-                Text(text = "Login")
+                Button(
+                    onClick = login
+                ) {
+                    Text(text = "Login")
+                }
             }
         }
 
@@ -104,7 +142,7 @@ fun validateLogin(user: String, password: String): String {
     return when {
         !user.contains('@') -> "User must contain @"
         password.length < 5 -> "Password must have at least 5 characters"
-        else -> "Success"
+        else -> ""
     }
 }
 
